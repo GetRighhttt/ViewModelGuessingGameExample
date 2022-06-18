@@ -43,19 +43,24 @@ class GameFragment : Fragment() {
          * has access to its views.
          */
 
-        // Live Data update to the incorrect guesses with a new value
+        // assigning viewModel & LiveData using dataBinding
+        binding.gameViewModel = viewModel
+        binding.lifecycleOwner = viewLifecycleOwner
+
+        /**
+         * This was the old way of assigning LiveData without using DataBinding.
+         *
+         *
         viewModel.incorrectGuesses.observe(viewLifecycleOwner, Observer { newValue ->
             binding.incorrectGuesses.text = "Incorrect Guesses: $newValue"
         })
-        // LiveData update to the number of lives left afterwards
         viewModel.livesLeft.observe(viewLifecycleOwner, Observer { newValue ->
             binding.lives.text = "You have $newValue lives left!"
         })
-
-        // LiveData update to the display of the word.
         viewModel.secretWordDisplay.observe(viewLifecycleOwner, Observer { newValue ->
             binding.word.text = newValue
         })
+        */
 
         // Incorporate livedata into the fragment
         viewModel.gameOver.observe(viewLifecycleOwner, Observer { newValue ->
