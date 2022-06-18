@@ -5,6 +5,7 @@ import androidx.fragment.app.Fragment
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import androidx.lifecycle.Observer
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.ViewModelProvider
 import androidx.navigation.findNavController
@@ -28,22 +29,48 @@ class GameFragment : Fragment() {
         // set binding to inflate the fragment
         _binding = FragmentGameBinding.inflate(layoutInflater)
         val view = binding.root
-        // tells the viewModel provider to get the viewModel object linked with the fragment
+        // GameFragment ask the ViewModelProvider for an instance of GameViewModel
         viewModel = ViewModelProvider(this).get(GameViewModel::class.java)
-        // call the update screen method
-        updateScreen()
+
+        /**
+         * Here is an example of LiveData implementation.
+         * LiveData tells the fragment or activity when the properties have changed.
+         * I.E. the data has been updated.
+         * observe() - used to make a fragment respond to value changes in the viewModel's
+         * MutableLiveData property.
+         * viewLifecycleOwner - refers to the lifecycle of the fragment's views
+         * Observer - class that receives live data, that's only active when it the fragment
+         * has access to its views.
+         */
+
+        // Live Data update to the incorrect guesses with a new value
+        viewModel.incorrectGuesses.observe(viewLifecycleOwner, Observer { newValue ->
+            binding.incorrectGuesses.text = "Incorrect Guesses: $newValue"
+        })
+        // LiveData update to the number of lives left afterwards
+        viewModel.livesLeft.observe(viewLifecycleOwner, Observer { newValue ->
+            binding.lives.text = "You have $newValue lives left!"
+        })
+
+        // LiveData update to the display of the word.
+        viewModel.secretWordDisplay.observe(viewLifecycleOwner, Observer { newValue ->
+            binding.word.text = newValue
+        })
+
+        // Incorporate livedata into the fragment
+        viewModel.gameOver.observe(viewLifecycleOwner, Observer { newValue ->
+            if(newValue) {
+                val action = GameFragmentDirections
+                    .actionGameFragmentToResultFragment(viewModel.wonLostMessage())
+                view.findNavController().navigate(action)
+            }
+        })
 
         // now we set the button to navigate to the other fragment
         binding.guessButton.setOnClickListener {
             // we use viewModel a number of times to reference the properties in the viewModel
             viewModel.makeGuess(binding.guess.text.toString().uppercase())
             binding.guess.text = null
-            updateScreen()
-            if(viewModel.isWon() || viewModel.isLost()) {
-                val action = GameFragmentDirections
-                    .actionGameFragmentToResultFragment(viewModel.wonLostMessage())
-                view.findNavController().navigate(action)
-            }
         }
         return view
     }
@@ -52,11 +79,4 @@ class GameFragment : Fragment() {
         super.onDestroyView()
         _binding = null
     }
-
-    fun updateScreen() {
-        binding.word.text = viewModel.secretWordDisplay
-        binding.lives.text = "You have ${viewModel.livesLeft} lives left"
-        binding.incorrectGuesses.text = "Incorrect guess: ${viewModel.incorrectGuesses}"
-    }
-
 }
